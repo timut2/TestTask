@@ -3,10 +3,14 @@ package postgresql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/timut2/music-library-api/internal/model"
+	"github.com/timut2/music-library-api/pkg/logger"
 )
+
+var ErrRecordNotFound = errors.New("record not found")
 
 type SongsRepository struct {
 	db *sql.DB
@@ -144,6 +148,11 @@ func (sr *SongsRepository) GetVerse(id int64, filter model.VerseFilter) ([]*mode
 	}
 
 	if err = rows.Err(); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logger.PrintInfo("Didn't find verse with this id", map[string]any{
+				"Id": id,
+			})
+		}
 		return nil, err
 	}
 
@@ -193,6 +202,16 @@ func (sr *SongsRepository) Get(id int64) (*model.Song, error) {
 		}
 		verses = append(verses, verse)
 	}
+
+	if err = rows.Err(); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logger.PrintInfo("Didn't find verse with this id", map[string]any{
+				"Id": id,
+			})
+		}
+		return nil, err
+	}
+
 	song.Verse = verses
 	return &song, nil
 }
@@ -211,9 +230,16 @@ func (sr *SongsRepository) Insert(newSong *model.NewSong) error {
 		args := []any{song.Name, song.Group}
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		return sr.db.QueryRowContext(ctx, query, args...).Scan(&song.ID)
-	}
 
+		err := sr.db.QueryRowContext(ctx, query, args...).Scan(&song.ID)
+		if err != nil {
+			return err
+		}
+		logger.PrintInfo("Inserted new song", map[string]any{
+			"newSong": newSong,
+		})
+	}
+	logger.PrintInfo("Empty body of a new song", map[string]any{})
 	return nil
 }
 
@@ -236,6 +262,9 @@ func (sr *SongsRepository) Update(song *model.Song) error {
 	if err != nil {
 		return err
 	}
+	logger.PrintInfo("Updated song", map[string]any{
+		"updatedSong": song,
+	})
 
 	return nil
 }
@@ -259,7 +288,7 @@ func (sr *SongsRepository) Delete(id int64) error {
 	}
 
 	if rowsAffected == 0 {
-		return err
+		return ErrRecordNotFound
 	}
 	return nil
 }

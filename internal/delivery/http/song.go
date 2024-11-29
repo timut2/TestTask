@@ -1,12 +1,14 @@
 package http
 
 import (
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 
 	"github.com/timut2/music-library-api/internal/delivery"
 	"github.com/timut2/music-library-api/internal/model"
+	"github.com/timut2/music-library-api/internal/repository/postgresql"
+	errorresp "github.com/timut2/music-library-api/pkg/errors"
 	"github.com/timut2/music-library-api/pkg/jsonutil"
 	"github.com/timut2/music-library-api/pkg/validator"
 )
@@ -142,34 +144,44 @@ func (h *Handler) addSongHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) updateSongHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := readIDParam(r)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.NotFoundResponse(w, r)
+		return
 	}
 
 	song, err := h.service.Get(id)
-
 	if err != nil {
-		log.Fatal(err)
+		switch {
+		case errors.Is(err, postgresql.ErrRecordNotFound):
+			errorresp.NotFoundResponse(w, r)
+		default:
+			errorresp.ServerErrorResponse(w, r, err)
+		}
+		return
 	}
 
 	var songHolder model.SongHolder
 
 	err = jsonutil.ReadJSON(w, r, &songHolder)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.BadRequestResponse(w, r, err)
+		return
 	}
 
-	fmt.Println(songHolder.Name, songHolder.Group)
-	song.Name = *songHolder.Name
-	song.Group = *songHolder.Group
+	if songHolder.Name != nil {
+		song.Name = *songHolder.Name
+	}
 
+	if songHolder.Name != nil {
+		song.Group = *songHolder.Group
+	}
 	err = h.service.Update(song)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.ServerErrorResponse(w, r, err)
 	}
 
 	err = jsonutil.WriteJSON(w, http.StatusOK, jsonutil.Wrap{"song": song}, nil)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.ServerErrorResponse(w, r, err)
 	}
 }
 
@@ -187,17 +199,23 @@ func (h *Handler) updateSongHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) deleteSongHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := readIDParam(r)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.NotFoundResponse(w, r)
+		return
 	}
 
 	err = h.service.Delete(id)
 	if err != nil {
-		log.Fatal(err)
+		switch {
+		case errors.Is(err, postgresql.ErrRecordNotFound):
+			errorresp.NotFoundResponse(w, r)
+		default:
+			errorresp.ServerErrorResponse(w, r, err)
+		}
 	}
 
 	err = jsonutil.WriteJSON(w, http.StatusOK, jsonutil.Wrap{"message": "song deleted successfully"}, nil)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.ServerErrorResponse(w, r, err)
 	}
 }
 
@@ -215,19 +233,19 @@ func (h *Handler) addVerseHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := jsonutil.ReadJSON(w, r, &input)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.BadRequestResponse(w, r, err)
 		return
 	}
 
 	err = h.service.InsertMusicInfo(input.Group, input.Name)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.ServerErrorResponse(w, r, err)
 		return
 	}
 
 	err = jsonutil.WriteJSON(w, http.StatusOK, jsonutil.Wrap{"message": "inserted successfully"}, nil)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.ServerErrorResponse(w, r, err)
 	}
 
 }

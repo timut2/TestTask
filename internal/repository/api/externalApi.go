@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -17,6 +18,10 @@ func NewApiClient(config *config.Config) *ApiClient {
 	return &ApiClient{config: config}
 }
 
+var ErrBadRequest = errors.New("incorrect request")
+
+var ErrInternalServerError = errors.New("internal server error")
+
 func (ac *ApiClient) GetMusicInfo(group string, song string) (*model.MusicInfo, error) {
 	url := fmt.Sprintf("%s/info?group=%s&song=%s", ac.config.ExternalApiUrl, group, song)
 	resp, err := http.Get(url)
@@ -26,7 +31,12 @@ func (ac *ApiClient) GetMusicInfo(group string, song string) (*model.MusicInfo, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("received status code %d", resp.StatusCode)
+		if resp.StatusCode == http.StatusBadRequest {
+			return nil, ErrBadRequest
+		}
+		if resp.StatusCode == http.StatusInternalServerError {
+			return nil, ErrInternalServerError
+		}
 	}
 
 	var musicInfo model.MusicInfo

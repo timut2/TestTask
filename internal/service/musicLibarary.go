@@ -1,9 +1,11 @@
 package service
 
 import (
-	"log"
+	"errors"
 
 	"github.com/timut2/music-library-api/internal/model"
+	"github.com/timut2/music-library-api/internal/repository/api"
+	"github.com/timut2/music-library-api/pkg/logger"
 )
 
 type SongStorage interface {
@@ -64,8 +66,24 @@ func (ml *MusicLibrary) Get(id int64) (*model.Song, error) {
 func (ml *MusicLibrary) InsertMusicInfo(group, name string) error {
 	musicInfo, err := ml.apiClient.GetMusicInfo(group, name)
 	if err != nil {
-		log.Fatal(err)
+		if errors.Is(err, api.ErrBadRequest) {
+			logger.PrintDebug("bad request ", map[string]any{
+				"group": group,
+				"name":  name,
+				"error": err,
+			})
+		}
+		if errors.Is(err, api.ErrInternalServerError) {
+			logger.PrintDebug("error on server side", map[string]any{
+				"error": err,
+			})
+		}
 	}
+
+	logger.PrintDebug("info from external API", map[string]any{
+		"musicInfo": musicInfo,
+	})
+
 	if musicInfo != nil {
 		err := ml.musicInfoStorage.InsertMusicInfo(musicInfo)
 		if err != nil {
