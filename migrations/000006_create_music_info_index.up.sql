@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS music_info_id_idx ON music_info (music_info_id);

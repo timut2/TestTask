@@ -1,0 +1,246 @@
+basePath: /
+definitions:
+  model.ErrResponse:
+    properties:
+      error: {}
+    type: object
+  model.NewSong:
+    properties:
+      group:
+        type: string
+      song:
+        type: string
+    type: object
+  model.Song:
+    properties:
+      group:
+        type: string
+      id:
+        type: integer
+      song:
+        type: string
+      verses:
+        items:
+          $ref: '#/definitions/model.SongVerse'
+        type: array
+    type: object
+  model.SongHolder:
+    properties:
+      group:
+        type: string
+      song:
+        type: string
+    type: object
+  model.SongVerse:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      verse_number:
+        type: integer
+    type: object
+  model.Songs:
+    properties:
+      songs:
+        items:
+          $ref: '#/definitions/model.Song'
+        type: array
+    type: object
+  model.Verses:
+    properties:
+      verses:
+        items:
+          $ref: '#/definitions/model.SongVerse'
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is a sample music library API.
+  title: Music Library API
+  version: "1.0"
+paths:
+  /song:
+    get:
+      consumes:
+      - application/json
+      description: Receive list of all songs
+      parameters:
+      - description: name search by songName
+        in: query
+        name: songName
+        type: string
+      - description: name search by group
+        in: query
+        name: group
+        type: string
+      - description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      - description: Number of verses per page
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Songs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+      summary: Get list of all songs
+      tags:
+      - song
+    post:
+      consumes:
+      - application/json
+      description: Add a new song to the music library
+      parameters:
+      - description: New song information
+        in: body
+        name: newSong
+        required: true
+        schema:
+          $ref: '#/definitions/model.NewSong'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Song'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+      summary: Add a new song
+      tags:
+      - song
+  /song/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete the details of an existing song from the music library.
+      parameters:
+      - description: Song ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted song
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+        "400":
+          description: Invalid ID supplied
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+        "404":
+          description: Song not found
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+      summary: Delete an existing song
+      tags:
+      - song
+    get:
+      consumes:
+      - application/json
+      description: Receive list of all verses from a song
+      parameters:
+      - description: Filter by verse number
+        in: query
+        name: verseNumber
+        type: integer
+      - description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      - description: Number of verses per page
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Verses'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+      summary: Get all verses of song
+      tags:
+      - song
+    patch:
+      consumes:
+      - application/json
+      description: Update the details of an existing song in the music library.
+      parameters:
+      - description: Song ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated song information
+        in: body
+        name: songHolder
+        required: true
+        schema:
+          $ref: '#/definitions/model.SongHolder'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated song
+          schema:
+            $ref: '#/definitions/model.Song'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Song'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+      summary: Update an existing song
+      tags:
+      - song
+  /verse:
+    post:
+      consumes:
+      - application/json
+      description: Insert a new song into the music library.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully inserted song
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrResponse'
+      summary: Add a new song
+      tags:
+      - song
+swagger: "2.0"

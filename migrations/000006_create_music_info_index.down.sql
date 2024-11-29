@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS music_info_id_idx;
