@@ -235,11 +235,8 @@ func (sr *SongsRepository) Insert(newSong *model.NewSong) error {
 		if err != nil {
 			return err
 		}
-		logger.PrintInfo("Inserted new song", map[string]any{
-			"newSong": newSong,
-		})
+
 	}
-	logger.PrintInfo("Empty body of a new song", map[string]any{})
 	return nil
 }
 
@@ -262,9 +259,6 @@ func (sr *SongsRepository) Update(song *model.Song) error {
 	if err != nil {
 		return err
 	}
-	logger.PrintInfo("Updated song", map[string]any{
-		"updatedSong": song,
-	})
 
 	return nil
 }

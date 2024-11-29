@@ -74,15 +74,9 @@ func (ml *MusicLibrary) InsertMusicInfo(group, name string) error {
 			})
 		}
 		if errors.Is(err, api.ErrInternalServerError) {
-			logger.PrintDebug("error on server side", map[string]any{
-				"error": err,
-			})
+			return err
 		}
 	}
-
-	logger.PrintDebug("info from external API", map[string]any{
-		"musicInfo": musicInfo,
-	})
 
 	if musicInfo != nil {
 		err := ml.musicInfoStorage.InsertMusicInfo(musicInfo)

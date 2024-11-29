@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -13,6 +14,7 @@ import (
 	"github.com/timut2/music-library-api/internal/repository/api"
 	"github.com/timut2/music-library-api/internal/repository/postgresql"
 	"github.com/timut2/music-library-api/internal/service"
+	"github.com/timut2/music-library-api/pkg/logger"
 )
 
 // @title Music Library API
@@ -22,6 +24,7 @@ import (
 // @host localhost:8080
 // @BasePath /
 func main() {
+	logger.New(os.Stdout, logger.DebugLevel)
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)

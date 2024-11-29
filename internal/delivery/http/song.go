@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/timut2/music-library-api/internal/delivery"
 	"github.com/timut2/music-library-api/internal/model"
 	"github.com/timut2/music-library-api/internal/repository/postgresql"
 	errorresp "github.com/timut2/music-library-api/pkg/errors"
@@ -46,10 +45,6 @@ func (h *Handler) listLibraryHandler(w http.ResponseWriter, r *http.Request) {
 	filter.Page = readInt(qs, "page", 1, v)
 	filter.PageSize = readInt(qs, "page_size", 10, v)
 
-	if delivery.ValidateFilters(v, filter); !v.Valid() {
-
-	}
-
 	songs, err := h.service.GetAll(filter)
 	if err != nil {
 		log.Fatal(err)
@@ -86,10 +81,6 @@ func (h *Handler) getSongTextHandler(w http.ResponseWriter, r *http.Request) {
 	filter.VerseNumber = readInt(qs, "verseNumber", 0, v)
 	filter.Page = readInt(qs, "page", 1, v)
 	filter.PageSize = readInt(qs, "page_size", 10, v)
-
-	if delivery.ValidateVerseFilters(v, filter); !v.Valid() {
-
-	}
 
 	verses, err := h.service.GetVerse(id, filter)
 	if err != nil {
