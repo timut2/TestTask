@@ -114,3 +114,7 @@ go mod tidy
 ```
 go run ./cmd/api 
 ```
+- **migrate down (chage -database parametr):**
+```
+migrate -path ./migrations -database 'postgres://postgres:123123@localhost:5432/postgres?sslmode=disable' down
+```
