@@ -5,10 +5,12 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/timut2/music-library-api/internal/delivery"
 	"github.com/timut2/music-library-api/internal/model"
 	"github.com/timut2/music-library-api/internal/repository/postgresql"
 	errorresp "github.com/timut2/music-library-api/pkg/errors"
 	"github.com/timut2/music-library-api/pkg/jsonutil"
+	"github.com/timut2/music-library-api/pkg/logger"
 	"github.com/timut2/music-library-api/pkg/validator"
 )
 
@@ -45,11 +47,22 @@ func (h *Handler) listLibraryHandler(w http.ResponseWriter, r *http.Request) {
 	filter.Page = readInt(qs, "page", 1, v)
 	filter.PageSize = readInt(qs, "page_size", 10, v)
 
-	songs, err := h.service.GetAll(filter)
-	if err != nil {
-		log.Fatal(err)
+	if delivery.ValidateFilters(v, filter); !v.Valid() {
+		errorresp.FailedValidationResponse(w, r, v.Errors)
 		return
 	}
+
+	songs, err := h.service.GetAll(filter)
+	if err != nil {
+		errorresp.ServerErrorResponse(w, r, err)
+		return
+	}
+
+	logger.PrintDebug("", map[string]any{
+		"url":               r.URL.String(),
+		"number of records": len(songs),
+		"songs list":        songs,
+	})
 
 	err = jsonutil.WriteJSON(w, http.StatusOK, jsonutil.Wrap{"songs": songs}, nil)
 	if err != nil {
@@ -71,7 +84,7 @@ func (h *Handler) listLibraryHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getSongTextHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := readIDParam(r)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.NotFoundResponse(w, r)
 	}
 
 	var filter model.VerseFilter
@@ -82,11 +95,20 @@ func (h *Handler) getSongTextHandler(w http.ResponseWriter, r *http.Request) {
 	filter.Page = readInt(qs, "page", 1, v)
 	filter.PageSize = readInt(qs, "page_size", 10, v)
 
+	if delivery.ValidateVerseFilters(v, filter); !v.Valid() {
+		errorresp.FailedValidationResponse(w, r, v.Errors)
+		return
+	}
+
 	verses, err := h.service.GetVerse(id, filter)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	logger.PrintDebug("", map[string]any{
+		"url":    r.URL.String(),
+		"verses": verses,
+	})
 	err = jsonutil.WriteJSON(w, http.StatusOK, jsonutil.Wrap{"verses": verses}, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -107,17 +129,17 @@ func (h *Handler) addSongHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := jsonutil.ReadJSON(w, r, &input)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.BadRequestResponse(w, r, err)
 	}
 
 	err = h.service.InsertSong(input)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.ServerErrorResponse(w, r, err)
 	}
 
 	err = jsonutil.WriteJSON(w, http.StatusOK, jsonutil.Wrap{"message": "songs inserted successfully"}, nil)
 	if err != nil {
-		log.Fatal(err)
+		errorresp.ServerErrorResponse(w, r, err)
 	}
 }
 
@@ -170,6 +192,10 @@ func (h *Handler) updateSongHandler(w http.ResponseWriter, r *http.Request) {
 		errorresp.ServerErrorResponse(w, r, err)
 	}
 
+	logger.PrintDebug("Updated", map[string]any{
+		"song": song,
+	})
+
 	err = jsonutil.WriteJSON(w, http.StatusOK, jsonutil.Wrap{"song": song}, nil)
 	if err != nil {
 		errorresp.ServerErrorResponse(w, r, err)
@@ -193,6 +219,12 @@ func (h *Handler) deleteSongHandler(w http.ResponseWriter, r *http.Request) {
 		errorresp.NotFoundResponse(w, r)
 		return
 	}
+
+	logger.PrintDebug("", map[string]any{
+		"method": r.Method,
+		"url":    r.URL.String(),
+		"id":     id,
+	})
 
 	err = h.service.Delete(id)
 	if err != nil {

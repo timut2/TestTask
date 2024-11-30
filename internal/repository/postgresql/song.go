@@ -16,11 +16,6 @@ type SongsRepository struct {
 	db *sql.DB
 }
 
-// InsertMusicInfo implements service.SongStorage.
-func (sr *SongsRepository) InsertMusicInfo(*model.MusicInfo) error {
-	panic("unimplemented")
-}
-
 func NewSongsRepository(db *sql.DB) *SongsRepository {
 	return &SongsRepository{db: db}
 }

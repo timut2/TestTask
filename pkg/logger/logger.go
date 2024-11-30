@@ -3,6 +3,7 @@ package logger
 import (
 	"encoding/json"
 	"io"
+	"os"
 	"runtime/debug"
 	"time"
 )
@@ -34,6 +35,10 @@ type Logger struct {
 }
 
 var l *Logger
+
+func init() {
+	l = New(os.Stdout, DebugLevel)
+}
 
 func New(out io.Writer, level Level) *Logger {
 	return &Logger{

@@ -65,6 +65,9 @@ func (ml *MusicLibrary) Get(id int64) (*model.Song, error) {
 
 func (ml *MusicLibrary) InsertMusicInfo(group, name string) error {
 	musicInfo, err := ml.apiClient.GetMusicInfo(group, name)
+	logger.PrintDebug("info from external API", map[string]any{
+		"musicInfo": musicInfo,
+	})
 	if err != nil {
 		if errors.Is(err, api.ErrBadRequest) {
 			logger.PrintDebug("bad request ", map[string]any{
